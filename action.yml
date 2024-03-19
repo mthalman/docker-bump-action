@@ -44,7 +44,7 @@ runs:
           $os = "${{ inputs.os }}"
           $arch = "${{ inputs.arch }}"
           $result = docker run --rm ghcr.io/mthalman/dredge image compare layers --output json $baseImage $targetImage --os $os --arch $arch | ConvertFrom-Json
-          $value = $($result.Summary.TargetIncludesAllBaseLayers).ToLower()
+          $value = "$($result.Summary.TargetIncludesAllBaseLayers)".ToLower()
           echo "TRIGGER_WORKFLOW=$value" >> "$env:GITHUB_ENV"
           echo "dispatch-sent=$value" >> "$env:GITHUB_OUTPUT"
     - name: Repository Dispatch
