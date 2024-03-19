@@ -19,13 +19,13 @@ inputs:
     default: amd64
   repository:
     description: 'Name of GitHub repository containing the workflow to trigger'
-    required: true
+    default: ${{ github.repository }}
   event-type:
     description: 'Name of the event that will be sent for the repository dispatch'
     default: 'base-image-update'
   token:
     description: 'GITHUB_TOKEN or a `repo` scoped Personal Access Token (PAT) used to send the repository dispatch'
-    required: true
+    default: ${{ github.token }}
 outputs:
   dispatch-sent:
     description: "A value indicating whether a repository dispatch was sent"
