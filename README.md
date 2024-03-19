@@ -61,8 +61,6 @@ See a working example of these workflows at [mthalman/docker-bump-action-example
 | `event-type` | A custom webhook event name. | `base-image-update` |
 | `token` | An access token with the appropriate permissions. See [Token](#token) for further details. | `${{ github.token }}` |
 
-## Example
-
 ## Token
 
 In order to create the [`repository_dispatch`](https://docs.github.com/rest/repos/repos#create-a-repository-dispatch-event) events, the action requires access to the repo via a token.
