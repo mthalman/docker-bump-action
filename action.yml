@@ -29,12 +29,11 @@ inputs:
 outputs:
   dispatch-sent:
     description: "A value indicating whether a repository dispatch was sent"
-    value: ${{ steps.check-base-image.outputs.dispatch-sent }}
+    value: ${{ steps.report-status.outputs.dispatch-sent }}
 runs:
   using: "composite"
   steps:
     - name: Check Base Image
-      id: check-base-image
       shell: pwsh
       run: |
         $targetImage = "${{ inputs.target-image-name }}"
@@ -54,10 +53,11 @@ runs:
         repository: ${{ inputs.repository }}
         event-type: ${{ inputs.event-type }}
     - name: Report Status
+      id: report-status
       shell: pwsh
       run: |
-        if ($env:TRIGGER_WORKFLOW -eq 'false') {
-          echo "A repository dispatch was sent to '${{ inputs.repository }}' with event type '${{ inputs.event-type }}'.
+        if ($env:TRIGGER_WORKFLOW -eq "false") {
+          echo "A repository dispatch was sent to '${{ inputs.repository }}' with event type '${{ inputs.event-type }}'."
         } else {
           echo "No repository dispatch was sent."
         }
