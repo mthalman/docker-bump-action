@@ -35,18 +35,17 @@ runs:
   steps:
     - name: Check Base Image
       id: check-base-image
-      uses: Azure/powershell@v1
-      with:
-        azPSVersion: latest
-        inlineScript: |
-          $targetImage = "${{ inputs.target-image-name }}"
-          $baseImage = "${{ inputs.base-image-name }}"
-          $os = "${{ inputs.os }}"
-          $arch = "${{ inputs.arch }}"
-          $result = docker run --rm ghcr.io/mthalman/dredge image compare layers --output json $baseImage $targetImage --os $os --arch $arch | ConvertFrom-Json
-          $value = "$($result.Summary.TargetIncludesAllBaseLayers)".ToLower()
-          echo "TRIGGER_WORKFLOW=$value" >> "$env:GITHUB_ENV"
-          echo "dispatch-sent=$value" >> "$env:GITHUB_OUTPUT"
+      shell: pwsh
+      run: |
+        $targetImage = "${{ inputs.target-image-name }}"
+        $baseImage = "${{ inputs.base-image-name }}"
+        $os = "${{ inputs.os }}"
+        $arch = "${{ inputs.arch }}"
+
+        $result = docker run --rm ghcr.io/mthalman/dredge image compare layers --output json $baseImage $targetImage --os $os --arch $arch | ConvertFrom-Json
+        $value = "$($result.Summary.TargetIncludesAllBaseLayers)".ToLower()
+        
+        echo "TRIGGER_WORKFLOW=$value" >> "$env:GITHUB_ENV"
     - name: Repository Dispatch
       if: env.TRIGGER_WORKFLOW == 'false'
       uses: peter-evans/repository-dispatch@v3
@@ -54,4 +53,13 @@ runs:
         token: ${{ inputs.token }}
         repository: ${{ inputs.repository }}
         event-type: ${{ inputs.event-type }}
+    - name: Report Status
+      shell: pwsh
+      run: |
+        if ($env:TRIGGER_WORKFLOW -eq 'false') {
+          echo "A repository dispatch was sent to '${{ inputs.repository }}' with event type '${{ inputs.event-type }}'.
+        } else {
+          echo "No repository dispatch was sent."
+        }
 
+        echo "dispatch-sent=$env:TRIGGER_WORKFLOW" >> "$env:GITHUB_OUTPUT"
