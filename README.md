@@ -29,22 +29,12 @@ jobs:
           base-image-name: alpine:latest
 ```
 
-Triggered Workflow (via `repository_dispatch`):
+Add the following in the workflow which builds your Docker image:
 
 ```yml
-name: Build
-
 on:
-  push:
-    branches: [ "main" ]
   repository_dispatch:
     types: [base-image-update]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-...
 ```
 
 See a working example of these workflows at [mthalman/docker-bump-action-example](https://github.com/mthalman/docker-bump-action-example).
@@ -55,11 +45,14 @@ See a working example of these workflows at [mthalman/docker-bump-action-example
 | --- | --- | --- |
 | `target-image-name` | (**required**) Name of the image to check. | |
 | `base-image-name` | (**required**) Name of the base image the target image is based on. | |
-| `os` | Operating system of the image (options: `linux`, `windows`) | `linux` |
 | `arch` | Default architecture of the image | `amd64` |
 | `repository` | The full name of the repository to send the dispatch. | `${{ github.repository }}` |
 | `event-type` | A custom webhook event name. | `base-image-update` |
 | `token` | An access token with the appropriate permissions. See [Token](#token) for further details. | `${{ github.token }}` |
+
+## OS Support
+
+Support is limited to Linux container images only.
 
 ## Token
 
