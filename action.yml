@@ -7,13 +7,6 @@ inputs:
   base-image-name:
     description: 'Name of the base image the target image is based on'
     required: true
-  os:
-    type: choice
-    description: 'Operating system of the image'
-    default: linux
-    options:
-    - linux
-    - windows
   arch:
     description: 'Default architecture of the image'
     default: amd64
@@ -41,7 +34,7 @@ runs:
         $os = "${{ inputs.os }}"
         $arch = "${{ inputs.arch }}"
 
-        $result = docker run --rm ghcr.io/mthalman/dredge image compare layers --output json $baseImage $targetImage --os $os --arch $arch | ConvertFrom-Json
+        $result = docker run --rm ghcr.io/mthalman/dredge image compare layers --output json $baseImage $targetImage --os linux --arch $arch | ConvertFrom-Json
         $value = "$($result.Summary.TargetIncludesAllBaseLayers)".ToLower()
         
         echo "TRIGGER_WORKFLOW=$value" >> "$env:GITHUB_ENV"
