@@ -31,13 +31,11 @@ runs:
       run: |
         $targetImage = "${{ inputs.target-image-name }}"
         $baseImage = "${{ inputs.base-image-name }}"
-        $os = "${{ inputs.os }}"
         $arch = "${{ inputs.arch }}"
 
-        $result = docker run --rm ghcr.io/mthalman/dredge image compare layers --output json $baseImage $targetImage --os linux --arch $arch | ConvertFrom-Json
-        $value = "$($result.Summary.TargetIncludesAllBaseLayers)".ToLower()
+        $result = docker run --rm ghcr.io/mthalman/docker-bump-checker -BaseImage $baseImage -Targetimage $targetImage -Architecture $arch
         
-        echo "TRIGGER_WORKFLOW=$value" >> "$env:GITHUB_ENV"
+        echo "TRIGGER_WORKFLOW=$result" >> "$env:GITHUB_ENV"
     - name: Repository Dispatch
       if: env.TRIGGER_WORKFLOW == 'false'
       uses: peter-evans/repository-dispatch@v3
