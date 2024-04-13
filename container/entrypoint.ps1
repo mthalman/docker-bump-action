@@ -10,8 +10,6 @@ param(
     [string]$Architecture
 )
 
-Write-Error "Comparing images $BaseImage and $TargetImage for architecture $Architecture"
-
 $result = dredge image compare layers --output json $BaseImage $TargetImage --os linux --arch $Architecture | ConvertFrom-Json
 $value = "$($result.Summary.TargetIncludesAllBaseLayers)".ToLower()
 return $value
