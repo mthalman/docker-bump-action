@@ -6,7 +6,13 @@ inputs:
     required: true
   base-image-name:
     description: 'Name of the base image the target image is based on'
-    required: true
+    default: ''
+  dockerfile:
+    description: 'Path to the Dockerfile used to build the target image'
+    default: ''
+  base-stage-name:
+    description: 'Name of the stage in the Dockerfile associated with the base image'
+    default: ''
   arch:
     description: 'Default architecture of the image'
     default: amd64
@@ -26,18 +32,24 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Check Base Image
+    - name: Check Image
       shell: pwsh
       run: |
         $targetImage = "${{ inputs.target-image-name }}"
         $baseImage = "${{ inputs.base-image-name }}"
+        $dockerfile = "${{ inputs.dockerfile }}"
+        $baseStage = "${{ inputs.base-stage-name }}"
         $arch = "${{ inputs.arch }}"
 
-        $result = docker run --rm ghcr.io/mthalman/docker-bump-checker -BaseImage $baseImage -Targetimage $targetImage -Architecture $arch
+        $containerName = "docker-bump-checker"
+        $result = docker run --name $containerName ghcr.io/mthalman/docker-bump-checker -BaseImage $baseImage -TargetImage $targetImage -Dockerfile $dockerfile -BaseStage $baseStage -Architecture $arch
+        docker cp $containerName:/home/app/log.txt log.txt
+        Get-Content log.txt
+        docker rm $containerName
         
         echo "TRIGGER_WORKFLOW=$result" >> "$env:GITHUB_ENV"
     - name: Repository Dispatch
-      if: env.TRIGGER_WORKFLOW == 'false'
+      if: env.TRIGGER_WORKFLOW == 'true'
       uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ inputs.token }}
@@ -47,7 +59,7 @@ runs:
       id: report-status
       shell: pwsh
       run: |
-        if ($env:TRIGGER_WORKFLOW -eq "false") {
+        if ($env:TRIGGER_WORKFLOW -eq "true") {
           echo "A repository dispatch was sent to '${{ inputs.repository }}' with event type '${{ inputs.event-type }}'."
         } else {
           echo "No repository dispatch was sent."

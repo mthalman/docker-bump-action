@@ -3,13 +3,19 @@ param(
     [Parameter(Mandatory = $True)]
     [string]$TargetImage,
 
-    [Parameter(Mandatory = $True)]
     [string]$BaseImage,
+
+    [string]$DockerfilePath,
+
+    [string]$BaseStageName,
 
     [Parameter(Mandatory = $True)]
     [string]$Architecture
 )
 
-$result = dredge image compare layers --output json $BaseImage $TargetImage --os linux --arch $Architecture | ConvertFrom-Json
-$value = "$($result.Summary.TargetIncludesAllBaseLayers)".ToLower()
-return $value
+if (-not $baseImage) {
+    $baseImage = $(& $PSScriptRoot/get-base-image.ps1 -DockerfilePath $DockerfilePath -BaseStageName $BaseStageName)
+}
+
+$triggerWorkflow = $(& $PSScriptRoot/check-image.ps1 -TargetImage $targetImage -BaseImage $baseImage -Architecture $Architecture)
+return $triggerWorkflow
