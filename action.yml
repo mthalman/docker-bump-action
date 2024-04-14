@@ -43,7 +43,7 @@ runs:
 
         $containerName = "docker-bump-checker"
         $result = docker run --name $containerName ghcr.io/mthalman/docker-bump-checker -BaseImage $baseImage -TargetImage $targetImage -Dockerfile $dockerfile -BaseStage $baseStage -Architecture $arch
-        docker cp $containerName:/home/app/log.txt log.txt
+        docker cp ${containerName}:/home/app/log.txt log.txt
         Get-Content log.txt
         docker rm $containerName
         
