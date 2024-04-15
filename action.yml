@@ -29,6 +29,8 @@ outputs:
   dispatch-sent:
     description: "A value indicating whether a repository dispatch was sent"
     value: ${{ steps.report-status.outputs.dispatch-sent }}
+env:
+  DOCKER_BUMP_CHECKER_VER: 0.2.0
 runs:
   using: "composite"
   steps:
@@ -43,7 +45,19 @@ runs:
         $arch = "${{ inputs.arch }}"
 
         $containerName = "docker-bump-checker"
-        $result = docker run --name $containerName ghcr.io/mthalman/docker-bump-checker -BaseImage $baseImage -TargetImage $targetImage -DockerfilePath $dockerfile -BaseStage $baseStage -Architecture $arch
+        $containerSrcPath = "/src"
+
+        # The repo directory will be volume-mounted into the container so the Dockerfile path needs to be modified accordingly
+        $dockerfile = "$containerSrcPath/$dockerfile"
+        $result = docker run `
+          --name $containerName `
+          -v ${GITHUB_WORKSPACE}:$containerSrcPath `
+          ghcr.io/mthalman/docker-bump-checker:${{ env.DOCKER_BUMP_CHECKER_VER }} `
+          -BaseImage $baseImage `
+          -TargetImage $targetImage `
+          -DockerfilePath $dockerfile `
+          -BaseStage $baseStage `
+          -Architecture $arch
         docker cp ${containerName}:/home/app/log.txt log.txt
         Get-Content log.txt
         docker rm $containerName
