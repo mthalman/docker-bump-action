@@ -29,8 +29,6 @@ outputs:
   dispatch-sent:
     description: "A value indicating whether a repository dispatch was sent"
     value: ${{ steps.report-status.outputs.dispatch-sent }}
-env:
-  DOCKER_BUMP_CHECKER_VER: 0.2.0
 runs:
   using: "composite"
   steps:
@@ -44,6 +42,8 @@ runs:
         $baseStage = "${{ inputs.base-stage-name }}"
         $arch = "${{ inputs.arch }}"
 
+        $dockerBumpCheckerVersion = "0.2.0"
+
         $containerName = "docker-bump-checker"
         $containerSrcPath = "/src"
 
@@ -52,7 +52,7 @@ runs:
         $result = docker run `
           --name $containerName `
           -v ${env:GITHUB_WORKSPACE}:$containerSrcPath `
-          ghcr.io/mthalman/docker-bump-checker:${{ env.DOCKER_BUMP_CHECKER_VER }} `
+          ghcr.io/mthalman/docker-bump-checker:$dockerBumpCheckerVersion `
           -BaseImage $baseImage `
           -TargetImage $targetImage `
           -DockerfilePath $dockerfile `
