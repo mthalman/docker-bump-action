@@ -51,16 +51,27 @@ runs:
         $dockerfile = "$containerSrcPath/$dockerfile"
         $result = docker run `
           --name $containerName `
-          -v ${GITHUB_WORKSPACE}:$containerSrcPath `
+          -v ${env:GITHUB_WORKSPACE}:$containerSrcPath `
           ghcr.io/mthalman/docker-bump-checker:${{ env.DOCKER_BUMP_CHECKER_VER }} `
           -BaseImage $baseImage `
           -TargetImage $targetImage `
           -DockerfilePath $dockerfile `
           -BaseStage $baseStage `
           -Architecture $arch
+        if ($LASTEXITCODE -ne 0) {
+          throw "command failed"
+        }
+
         docker cp ${containerName}:/home/app/log.txt log.txt
+        if ($LASTEXITCODE -ne 0) {
+          throw "command failed"
+        }
+
         Get-Content log.txt
         docker rm $containerName
+        if ($LASTEXITCODE -ne 0) {
+          throw "command failed"
+        }
         
         echo "TRIGGER_WORKFLOW=$result" >> "$env:GITHUB_ENV"
     - name: Repository Dispatch
