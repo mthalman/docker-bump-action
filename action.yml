@@ -56,7 +56,7 @@ runs:
           -BaseImage $baseImage `
           -TargetImage $targetImage `
           -DockerfilePath $dockerfile `
-          -BaseStage $baseStage `
+          -BaseStageName $baseStage `
           -Architecture $arch
         if ($LASTEXITCODE -ne 0) {
           throw "command failed"
