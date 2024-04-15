@@ -13,6 +13,10 @@ param(
     [string]$Architecture
 )
 
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+Set-StrictMode -Version 2.0
+
 if (-not $baseImage) {
     $baseImage = $(& $PSScriptRoot/get-base-image.ps1 -DockerfilePath $DockerfilePath -BaseStageName $BaseStageName)
 }
