@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS installer
 
-RUN dotnet tool install -g Valleysoft.Dredge --version "4.*" \
+RUN dotnet tool install -g Valleysoft.Dredge --version "5.*" \
     && dotnet tool install -g Valleysoft.DockerfileSpy --version "0.3-beta"
 
 RUN mkdir /symlinks \
