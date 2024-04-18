@@ -53,11 +53,11 @@ runs:
           --name $containerName `
           -v ${env:GITHUB_WORKSPACE}:$containerSrcPath `
           ghcr.io/mthalman/docker-bump-checker:$dockerBumpCheckerVersion `
-          -BaseImage $baseImage `
-          -TargetImage $targetImage `
-          -DockerfilePath $dockerfile `
-          -BaseStageName $baseStage `
-          -Architecture $arch
+          -BaseImage `"$baseImage`" `
+          -TargetImage `"$targetImage`" `
+          -DockerfilePath `"$dockerfile`" `
+          -BaseStageName `"$baseStage`" `
+          -Architecture `"$arch`"
         if ($LASTEXITCODE -ne 0) {
           throw "command failed"
         }
