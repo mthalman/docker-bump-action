@@ -1,7 +1,8 @@
 BeforeAll {
     $global:LASTEXITCODE = 0
     Mock Invoke-Expression { $global:LASTEXITCODE = 0 } -ParameterFilter { $Command -like "dotnet *" }
-
+    Mock Out-File { }
+    
     $targetImage = "foo"
     $baseImage = "bar"
     $architecture = "amd64"

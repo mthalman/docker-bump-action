@@ -14,12 +14,24 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version 2.0
 
-$result = Invoke-Expression "dredge image compare layers --output json $BaseImage $TargetImage --os linux --arch $Architecture" | ConvertFrom-Json
-if ($LASTEXITCODE -ne 0) {
+function LogMessage ($Message) {
+    Write-Output $Message | Out-File $env:HOME/log.txt -Append
+}
+
+$expr = "dredge image compare layers --output json $BaseImage $TargetImage --os linux --arch $Architecture"
+LogMessage "Invoke: $expr"
+$result = Invoke-Expression $expr
+$dredgeExitCode = $LASTEXITCODE
+LogMessage "Result: $result"
+if ($dredgeExitCode -ne 0) {
     throw "dredge image compare failed"
 }
 
-$imageUpToDate = [bool]$($result.Summary.TargetIncludesAllBaseLayers)
-$triggerWorkflow = ([string](-not $imageUpToDate)).ToLower()
+$result = $result | ConvertFrom-Json
 
-return $triggerWorkflow
+$imageUpToDate = [bool]$($result.summary.targetIncludesAllBaseLayers)
+$sendDispatch = ([string](-not $imageUpToDate)).ToLower()
+
+LogMessage "Send dispatch: $sendDispatch"
+
+return $sendDispatch
