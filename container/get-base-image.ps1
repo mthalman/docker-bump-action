@@ -1,5 +1,6 @@
 [cmdletbinding()]
 param(
+    [Parameter(Mandatory = $True)]
     [string]$DockerfilePath,
     [string]$BaseStageName
 )
@@ -9,11 +10,7 @@ $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version 2.0
 
 function LogMessage ($Message) {
-    Write-Output $Message | Out-File $env:HOME/log.txt
-}
-
-if (-not $DockerfilePath) {
-    throw "'dockerfile' input not provided. This is required when 'base-image-name' is not provided."
+    Write-Output $Message | Out-File $env:HOME/log.txt -Append
 }
 
 if (-not (Test-Path $DockerfilePath)) {
@@ -39,13 +36,21 @@ if (-not $BaseStageName) {
 
 $dfspyArgsString = $dfspyArgs -join ' '
 
-$fromOutput = Invoke-Expression "dfspy $dfspyArgsString" | ConvertFrom-Json
-if ($LASTEXITCODE -ne 0) {
+$expr = "dfspy $dfspyArgsString"
+LogMessage "Invoke: $expr"
+$fromOutput = Invoke-Expression $expr
+$dfspyExitCode = $LASTEXITCODE
+LogMessage "Result: $fromOutput"
+if ($dfspyExitCode -ne 0) {
     throw "dfspy failed"
 }
+$fromOutput = $fromOutput | ConvertFrom-Json
 
 if ($BaseStageName) {
     $baseImage = $fromOutput | Where-Object { $_.PSObject.Properties.Name -contains "stageName" -and $_.stageName -eq $BaseStageName } | Select-Object -ExpandProperty imageName
+    if (-not $baseImage) {
+        throw "Could not find stage with name '$BaseStageName'."
+    }
 } else {
     # Find the last stage of the Dockerfile and walk its parent chain to find the base image
     $currentNode = $fromOutput | Select-Object -Last 1

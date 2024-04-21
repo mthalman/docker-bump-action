@@ -42,6 +42,10 @@ runs:
         $baseStage = "${{ inputs.base-stage-name }}"
         $arch = "${{ inputs.arch }}"
 
+        if (-not $baseImage -and -not $dockerfile) {
+          throw "'dockerfile' input not provided. This is required when 'base-image-name' is not provided." 
+        }
+
         $dockerBumpCheckerVersion = "0.2.0"
 
         $containerName = "docker-bump-checker"
@@ -58,24 +62,27 @@ runs:
           -DockerfilePath `"$dockerfile`" `
           -BaseStageName `"$baseStage`" `
           -Architecture `"$arch`"
-        if ($LASTEXITCODE -ne 0) {
-          throw "command failed"
-        }
-
+        $dockerRunExitCode = $LASTEXITCODE
+        
         docker cp ${containerName}:/home/app/log.txt log.txt
         if ($LASTEXITCODE -ne 0) {
-          throw "command failed"
+          throw "Unable to retrieve log"
         }
 
         Get-Content log.txt
+
+        if ($dockerRunExitCode -ne 0) {
+          throw "command failed"
+        }
+        
         docker rm $containerName
         if ($LASTEXITCODE -ne 0) {
           throw "command failed"
         }
         
-        echo "TRIGGER_WORKFLOW=$result" >> "$env:GITHUB_ENV"
+        echo "SEND_DISPATCH=$result" >> "$env:GITHUB_ENV"
     - name: Repository Dispatch
-      if: env.TRIGGER_WORKFLOW == 'true'
+      if: env.SEND_DISPATCH == 'true'
       uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ inputs.token }}
@@ -85,7 +92,7 @@ runs:
       id: report-status
       shell: pwsh
       run: |
-        if ($env:TRIGGER_WORKFLOW -eq "true") {
+        if ($env:SEND_DISPATCH -eq "true") {
           echo "A repository dispatch was sent to '${{ inputs.repository }}' with event type '${{ inputs.event-type }}'."
         } else {
           echo "No repository dispatch was sent."

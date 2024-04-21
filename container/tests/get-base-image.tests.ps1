@@ -135,4 +135,19 @@ Describe 'Get base image' {
 
         { & $targetScript -DockerfilePath 'Dockerfile' } | Should -Throw "dfspy failed"
     }
+
+    It 'Given an unknown base stage name, it throws an error' {
+        $LASTEXITCODE = 0
+        Mock Invoke-Expression {
+            $fromOutput = @(
+                @{
+                    imageName = "foo"
+                    stageName = "stage1"
+                }
+            )
+            $fromOutput | ConvertTo-Json
+        } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile" }
+
+        { & $targetScript -DockerfilePath 'Dockerfile' -BaseStageName stage2 } | Should -Throw "Could not find stage with name 'stage2'."
+    }
 }
