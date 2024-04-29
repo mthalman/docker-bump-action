@@ -1,8 +1,9 @@
+Import-Module -Force $PSScriptRoot/../common.psm1
+
 BeforeAll {
     $global:LASTEXITCODE = 0
-    Mock Invoke-Expression { $global:LASTEXITCODE = 0 } -ParameterFilter { $Command -like "dotnet *" }
     Mock Test-Path { $true }
-    Mock Out-File {}
+    Mock Out-File {} -ModuleName common
 
     $targetScript = "$PSScriptRoot/../get-base-image.ps1"
 }
@@ -19,7 +20,8 @@ Describe 'Get base image' {
                     }
                 )
                 $fromOutput | ConvertTo-Json
-            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile --layout graph" }
+            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile --layout graph" } `
+              -ModuleName common
     
             & $targetScript -DockerfilePath 'Dockerfile' | Should -Be "foo"
         }
@@ -47,7 +49,8 @@ Describe 'Get base image' {
                     }
                 )
                 $fromOutput | ConvertTo-Json -Depth 10
-            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile --layout graph" }
+            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile --layout graph" } `
+              -ModuleName common
     
             & $targetScript -DockerfilePath 'Dockerfile' | Should -Be "foo3"
         }
@@ -81,7 +84,8 @@ Describe 'Get base image' {
                     }
                 )
                 $fromOutput | ConvertTo-Json -Depth 10
-            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile --layout graph" }
+            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile --layout graph" } `
+              -ModuleName common
     
             & $targetScript -DockerfilePath 'Dockerfile' | Should -Be "foo4"
         }
@@ -97,7 +101,8 @@ Describe 'Get base image' {
                     }
                 )
                 $fromOutput | ConvertTo-Json
-            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile" }
+            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile" } `
+              -ModuleName common
     
             & $targetScript -DockerfilePath 'Dockerfile' -BaseStageName stage1 | Should -Be "foo"
         }
@@ -118,7 +123,8 @@ Describe 'Get base image' {
                     }
                 )
                 $fromOutput | ConvertTo-Json -Depth 10
-            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile" }
+            } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile" } `
+              -ModuleName common
     
             & $targetScript -DockerfilePath 'Dockerfile' -BaseStageName stage1 | Should -Be "foo3"
         }
@@ -131,7 +137,7 @@ Describe 'Get base image' {
     }
 
     It 'Given a failed dfspy command, it throws an error' {
-        Mock Invoke-Expression { $global:LASTEXITCODE = 1 } -ParameterFilter { $Command -like "dfspy *" }
+        Mock Invoke-Expression { $global:LASTEXITCODE = 1 } -ParameterFilter { $Command -like "dfspy *" } -ModuleName common
 
         { & $targetScript -DockerfilePath 'Dockerfile' } | Should -Throw "dfspy failed"
     }
@@ -146,7 +152,8 @@ Describe 'Get base image' {
                 }
             )
             $fromOutput | ConvertTo-Json
-        } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile" }
+        } -ParameterFilter { $Command -eq "dfspy query from -f Dockerfile" } `
+          -ModuleName common
 
         { & $targetScript -DockerfilePath 'Dockerfile' -BaseStageName stage2 } | Should -Throw "Could not find stage with name 'stage2'."
     }

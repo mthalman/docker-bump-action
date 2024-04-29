@@ -9,9 +9,7 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version 2.0
 
-function LogMessage ($Message) {
-    Write-Output $Message | Out-File $env:HOME/log.txt -Append
-}
+Import-Module $PSScriptRoot/common.psm1
 
 if (-not (Test-Path $DockerfilePath)) {
     throw "Dockerfile path '$DockerfilePath' does not exist."
@@ -36,14 +34,8 @@ if (-not $BaseStageName) {
 
 $dfspyArgsString = $dfspyArgs -join ' '
 
-$expr = "dfspy $dfspyArgsString"
-LogMessage "Invoke: $expr"
-$fromOutput = Invoke-Expression $expr
-$dfspyExitCode = $LASTEXITCODE
-LogMessage "Result: $fromOutput"
-if ($dfspyExitCode -ne 0) {
-    throw "dfspy failed"
-}
+$cmd = "dfspy $dfspyArgsString"
+$fromOutput = $(InvokeTool $cmd "dfspy failed")
 $fromOutput = $fromOutput | ConvertFrom-Json
 
 if ($BaseStageName) {

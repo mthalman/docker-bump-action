@@ -14,22 +14,14 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version 2.0
 
-function LogMessage ($Message) {
-    Write-Output $Message | Out-File $env:HOME/log.txt -Append
-}
+Import-Module $PSScriptRoot/common.psm1
 
-$expr = "dredge image compare layers --output json $BaseImage $TargetImage --os linux --arch $Architecture"
-LogMessage "Invoke: $expr"
-$result = Invoke-Expression $expr
-$dredgeExitCode = $LASTEXITCODE
-LogMessage "Result: $result"
-if ($dredgeExitCode -ne 0) {
-    throw "dredge image compare failed"
-}
+$cmd = "dredge image compare layers --output json $BaseImage $TargetImage --os linux --arch $Architecture"
+$layerComparisonStr = $(InvokeTool $cmd "dredge image compare failed")
 
-$result = $result | ConvertFrom-Json
+$layerComparison = $layerComparisonStr | ConvertFrom-Json
 
-$imageUpToDate = [bool]$($result.summary.targetIncludesAllBaseLayers)
+$imageUpToDate = [bool]$($layerComparison.summary.targetIncludesAllBaseLayers)
 $sendDispatch = ([string](-not $imageUpToDate)).ToLower()
 
 LogMessage "Send dispatch: $sendDispatch"

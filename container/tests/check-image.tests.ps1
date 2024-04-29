@@ -1,7 +1,8 @@
-BeforeAll {
+Import-Module -Force $PSScriptRoot/../common.psm1
+
+BeforeAll {    
     $global:LASTEXITCODE = 0
-    Mock Invoke-Expression { $global:LASTEXITCODE = 0 } -ParameterFilter { $Command -like "dotnet *" }
-    Mock Out-File { }
+    Mock Out-File { } -ModuleName common
     
     $targetImage = "foo"
     $baseImage = "bar"
@@ -19,7 +20,8 @@ Describe 'Get result' {
                 }
             }
             $result | ConvertTo-Json
-        } -ParameterFilter { $Command -eq "dredge image compare layers --output json $baseImage $targetImage --os linux --arch $architecture" }
+        } -ParameterFilter { $Command -eq "dredge image compare layers --output json $baseImage $targetImage --os linux --arch $architecture" } `
+          -ModuleName common
         & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture | Should -Be "false"
     }
 
@@ -31,13 +33,14 @@ Describe 'Get result' {
                 }
             }
             $result | ConvertTo-Json
-        } -ParameterFilter { $Command -eq "dredge image compare layers --output json $baseImage $targetImage --os linux --arch $architecture" }
+        } -ParameterFilter { $Command -eq "dredge image compare layers --output json $baseImage $targetImage --os linux --arch $architecture" } `
+          -ModuleName common
 
         & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture | Should -Be "true"
     }
 
     It 'Given a failed dredge command, it throws an error' {
-        Mock Invoke-Expression { $global:LASTEXITCODE = 1 } -ParameterFilter { $Command -like "dredge *" }
+        Mock Invoke-Expression { $global:LASTEXITCODE = 1 } -ParameterFilter { $Command -like "dredge *" } -ModuleName common
 
         { & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture } | Should -Throw "dredge image compare failed"
     }
