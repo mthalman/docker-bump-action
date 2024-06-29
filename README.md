@@ -19,9 +19,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: mthalman/docker-bump-action@v0
         with:
@@ -82,6 +80,47 @@ The algorithm for deriving the image names is described below:
 1. Find the last stage defined in the Dockerfile.
 1. Starting from the last stage, walk the stage hierarchy until the root stage is found.
 1. The image name of the root stage is considered the base image name.
+
+## Dispatch Payload
+
+When the repository dispatch occurs, a payload is sent along with it. This payload includes metadata describing the state of the image that resulted in an update being needed. This payload can be retrieved in the workflow that responds to the dispatch via the `client-payload` event. Consuming this payload is completely optional and only necessary if your workflow requires more context regarding the dispatch.
+
+```yaml
+name: Build Image
+on:
+  repository_dispatch:
+    types: [base-image-update]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Show Rebuild Info
+      if: ${{ github.event.client_payload }}
+      run: |
+        target="${{ github.event.client_payload.updates[0].targetImageName }}"
+        base="${{ github.event.client_payload.updates[0].baseImageName }}"
+        echo "Rebuilding $target to be in sync with $base"
+```
+
+### Payload Schema
+
+Each object in the `updates` array represents an image that the action has determined requires an update.
+Currently the action only supports targeting single images and so this array will always have a single element.
+See #3 for support for multiple images.
+
+```json
+{
+  "updates": [
+    {
+      "targetImageName": "Name of the target image provided as input to the action",
+      "targetImageDigest": "Current digest of the target image",
+      "dockerfile": "Relative path of the Dockerfile",
+      "baseImageName": "Name of the base image that was either provided as input to the action or derived via other state",
+      "baseImageDigest": "Current digest of the base image"
+    }
+  ]
+}
+```
 
 ## Examples
 

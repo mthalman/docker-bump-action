@@ -28,11 +28,16 @@ inputs:
 outputs:
   dispatch-sent:
     description: "A value indicating whether a repository dispatch was sent"
-    value: ${{ steps.report-status.outputs.dispatch-sent }}
+    value: ${{ steps.check-image.outputs.SEND_DISPATCH }}
+  dispatch-payload:
+    description: "The payload data that was sent with the dispatch"
+    value: ${{ steps.check-image.outputs.OUTPUT_DISPATCH_PAYLOAD }}
+
 runs:
   using: "composite"
   steps:
     - name: Check Image
+      id: check-image
       shell: pwsh
       run: |
         $ErrorActionPreference = 'Stop'
@@ -46,16 +51,20 @@ runs:
           throw "'dockerfile' input not provided. This is required when 'base-image-name' is not provided." 
         }
 
-        $dockerBumpCheckerVersion = "0.2.0"
+        $dockerBumpCheckerVersion = "0.3.0"
 
         $containerName = "docker-bump-checker"
         $containerSrcPath = "/src"
 
+        if ($dockerfile.StartsWith(${env:GITHUB_WORKSPACE})) {
+          $dockerfile = $dockerfile.Substring(${env:GITHUB_WORKSPACE}.Length).TrimStart('/')
+        }
+
         # The repo directory will be volume-mounted into the container so the Dockerfile path needs to be modified accordingly
-        $dockerfile = "$containerSrcPath/$dockerfile"
         $result = docker run `
           --name $containerName `
           -v ${env:GITHUB_WORKSPACE}:$containerSrcPath `
+          -w $containerSrcPath `
           ghcr.io/mthalman/docker-bump-checker:$dockerBumpCheckerVersion `
           -BaseImage `"$baseImage`" `
           -TargetImage `"$targetImage`" `
@@ -64,7 +73,7 @@ runs:
           -Architecture `"$arch`"
         $dockerRunExitCode = $LASTEXITCODE
         
-        docker cp ${containerName}:/home/app/log.txt log.txt
+        docker cp ${containerName}:/home/app/log.txt log.txt > $null 2>&1
         if ($LASTEXITCODE -ne 0) {
           throw "Unable to retrieve log"
         }
@@ -79,23 +88,42 @@ runs:
         if ($LASTEXITCODE -ne 0) {
           throw "command failed"
         }
+
+        $result = $result | ConvertFrom-Json
+
+        # Need to track two different payloads. This is only to account for the scenario where no dispatch is sent.
+        # In that scenario, we don't send the dispatch but the repository-dispatch action will still validate its
+        # client-payload input which needs to be valid JSON. So that is defaulted here. The other payload is the
+        # output of this composite action. That needs to be empty when no dispatch is sent. In the scenario where
+        # a dispatch is sent, both these payload variables get set to the same value.
+        $actionPayload = "{}"
+        $outputPayload = ""
+
+        if ($result.sendDispatch -eq "true") {
+          $payloadObj = @{
+            updates = $result.updates
+          }
+
+          $actionPayload = ,$payloadObj | ConvertTo-Json -Compress
+          $outputPayload = $actionPayload
+        }
         
-        echo "SEND_DISPATCH=$result" >> "$env:GITHUB_ENV"
+        echo "SEND_DISPATCH=$($result.sendDispatch)" >> $env:GITHUB_OUTPUT
+        echo "ACTION_DISPATCH_PAYLOAD=$actionPayload" >> $env:GITHUB_OUTPUT
+        echo "OUTPUT_DISPATCH_PAYLOAD=$outputPayload" >> $env:GITHUB_OUTPUT
     - name: Repository Dispatch
-      if: env.SEND_DISPATCH == 'true'
+      if: ${{ steps.check-image.outputs.SEND_DISPATCH }} == 'true'
       uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ inputs.token }}
         repository: ${{ inputs.repository }}
         event-type: ${{ inputs.event-type }}
+        client-payload: ${{ steps.check-image.outputs.ACTION_DISPATCH_PAYLOAD }}
     - name: Report Status
-      id: report-status
       shell: pwsh
       run: |
-        if ($env:SEND_DISPATCH -eq "true") {
+        if ("${{ steps.check-image.outputs.SEND_DISPATCH }}" -eq "true") {
           echo "A repository dispatch was sent to '${{ inputs.repository }}' with event type '${{ inputs.event-type }}'."
         } else {
           echo "No repository dispatch was sent."
         }
-
-        echo "dispatch-sent=$env:TRIGGER_WORKFLOW" >> "$env:GITHUB_OUTPUT"

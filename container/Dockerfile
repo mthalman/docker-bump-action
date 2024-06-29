@@ -15,6 +15,7 @@ COPY --from=installer /usr/share/powershell /usr/share/powershell
 COPY --from=installer /root/.dotnet/tools /home/app/.dotnet/tools
 COPY --from=installer ["/symlinks", "/usr/bin"]
 COPY *.ps1 /scripts/
+COPY *.psm1 /scripts/
 
 # Returns 'true' in the output if the image is out-of-date in relation to its base image; otherwise, 'false'.
 ENTRYPOINT ["pwsh", "-c", "/scripts/entrypoint.ps1"]

@@ -21,6 +21,6 @@ if (-not $BaseImage) {
     $BaseImage = $(& $PSScriptRoot/get-base-image.ps1 -DockerfilePath $DockerfilePath -BaseStageName $BaseStageName)
 }
 
-$result = $(& $PSScriptRoot/check-image.ps1 -TargetImage $targetImage -BaseImage $BaseImage -Architecture $Architecture)
+$result = $(& $PSScriptRoot/check-image.ps1 -TargetImage $targetImage -BaseImage $BaseImage -Architecture $Architecture -DockerfilePath $DockerfilePath)
 
 return $result

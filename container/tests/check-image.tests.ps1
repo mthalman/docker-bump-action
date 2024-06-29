@@ -22,7 +22,24 @@ Describe 'Get result' {
             $result | ConvertTo-Json
         } -ParameterFilter { $Command -eq "dredge image compare layers --output json $baseImage $targetImage --os linux --arch $architecture" } `
           -ModuleName common
-        & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture | Should -Be "false"
+        
+        Mock Invoke-Expression {
+            "base-digest"
+        } -ParameterFilter { $Command -eq "dredge manifest resolve $baseImage --os linux --arch $architecture" } `
+          -ModuleName common
+        
+        Mock Invoke-Expression {
+            "target-digest"
+        } -ParameterFilter { $Command -eq "dredge manifest resolve $targetImage --os linux --arch $architecture" } `
+          -ModuleName common
+        $result = & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture
+
+        $expected = @{
+            sendDispatch = "false"
+            updates = @()
+        } | ConvertTo-Json
+
+        $result | Should -Be $expected
     }
 
     It 'Given a target image that is not up-to-date with the base image, it returns true' {
@@ -35,8 +52,32 @@ Describe 'Get result' {
             $result | ConvertTo-Json
         } -ParameterFilter { $Command -eq "dredge image compare layers --output json $baseImage $targetImage --os linux --arch $architecture" } `
           -ModuleName common
+        
+          Mock Invoke-Expression {
+            "base-digest"
+        } -ParameterFilter { $Command -eq "dredge manifest resolve $baseImage --os linux --arch $architecture" } `
+          -ModuleName common
+        
+        Mock Invoke-Expression {
+            "target-digest"
+        } -ParameterFilter { $Command -eq "dredge manifest resolve $targetImage --os linux --arch $architecture" } `
+          -ModuleName common
+        $result = & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture
 
-        & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture | Should -Be "true"
+        $expected = @{
+            sendDispatch = "true"
+            updates = @(
+                @{
+                    targetImageName = $targetImage
+                    targetImageDigest = "target-digest"
+                    dockerfile = ""
+                    baseImageName = $baseImage
+                    baseImageDigest = "base-digest"
+                }
+            )
+        } | ConvertTo-Json
+
+        $result | Should -Be $expected
     }
 
     It 'Given a failed dredge command, it throws an error' {
