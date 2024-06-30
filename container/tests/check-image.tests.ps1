@@ -83,6 +83,6 @@ Describe 'Get result' {
     It 'Given a failed dredge command, it throws an error' {
         Mock Invoke-Expression { $global:LASTEXITCODE = 1 } -ParameterFilter { $Command -like "dredge *" } -ModuleName common
 
-        { & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture } | Should -Throw "dredge image compare failed"
+        { & $targetScript -TargetImage $targetImage -BaseImage $baseImage -Architecture $architecture } | Should -Throw "Command failed with exit code 1: dredge image compare layers --output json bar foo --os linux --arch amd64"
     }
 }
