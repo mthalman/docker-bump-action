@@ -35,9 +35,9 @@ on:
     types: [base-image-update]
 ```
 
-See a working example of these workflows at [mthalman/docker-bump-action-example](https://github.com/mthalman/docker-bump-action-example).
+See a working example of this workflow scenario in the [docker-bump-action-example](https://github.com/mthalman/docker-bump-action-example/blob/main/.github/workflows/monitor-dockerfile.yml) repo.
 
-See [Examples](#examples) below for more usage patterns.
+Specifying a Dockerfile is not the only way to configure this. See [Examples](#examples) below for more usage patterns.
 
 ### Action inputs
 
@@ -45,9 +45,9 @@ See [Examples](#examples) below for more usage patterns.
 | --- | --- | --- |
 | `target-image-name` |**Required** Name of the image to check. | |
 | `base-image-name` | Name of the base image the target image is based on. **Required** when `dockerfile` is not set. See [Image Name Derivation](#base-image-name-derivation).  | |
-| `dockerfile` | Path to the Dockerfile from which to derive image names. **Required** when `base-image-name` is not set. See [Image Name Derivation](#base-image-name-derivation). | |
+| `dockerfile` | Path to the Dockerfile from which to derive image names. **Required** when `base-image-name` is not set and the target image does not contain a `org.opencontainers.image.base.name` label/annotation. See [Image Name Derivation](#base-image-name-derivation). | |
 | `base-stage-name` | Name of the stage within the Dockerfile from which to derive the name of the base image. See [Image Name Derivation](#base-image-name-derivation).  | |
-| `arch` | Default architecture of the image | `amd64` |
+| `arch` | Default architecture of the target image. This is used to resolve a multi-arch tag to a specifc image. | `amd64` |
 | `repository` | The full name of the repository to send the dispatch. | `${{ github.repository }}` |
 | `event-type` | A custom webhook event name. | `base-image-update` |
 | `token` | An access token with the appropriate permissions. See [Token](#token). | `${{ github.token }}` |
@@ -71,7 +71,13 @@ You can also use a fine-grained personal access token (beta). It needs the follo
 
 ## Base Image Name Derivation
 
-The base image name can either be provided explicitly via the `base-image-name` input or can be derived from the content of the Dockerfile specified by the `dockerfile` input. Be sure to examine the log output from the action to verify which image name it is using.
+The base image name can either be provided explicitly via the `base-image-name` input or can be derived in one of two ways:
+* the content of the Dockerfile specified by the `dockerfile` input.
+* the target image contains `org.opencontainers.image.base.name` as a label or annotation.
+
+Be sure to examine the log output from the action to verify which image name it is using.
+
+### Derivation from Dockerfile 
 
 Depending on how you've structured your Dockerfiles (specifically for multi-stage Dockerfiles), the base image name that is derived by the algorithm may not be what you intended. If the base image name is not what you intended, you can override it via the `base-image-name` or `base-stage-name` inputs.
 
@@ -124,6 +130,33 @@ See #3 for support for multiple images.
 
 ## Examples
 
+### Base Name Label/Annotation
+
+If the `dockerfile` input is not provided, the action attempts to query the target image for the `org.opencontainers.image.base.name` label or annotation. If set, it will use that value as the base image name to check against.
+
+This example Dockerfile shows how the label could be set. 
+
+> [!NOTE]  
+> Alternatively, labels and annotations can be set through various means when pushing an image to a registry:
+> * [build-push-action labels](https://docs.docker.com/build/ci/github-actions/manage-tags-labels/)
+> * [build-push-action annotations](https://docs.docker.com/build/ci/github-actions/annotations/)
+> * [BuildKit annotations](https://github.com/moby/buildkit/blob/master/docs/annotations.md)
+
+```Dockerfile
+FROM alpine:latest
+LABEL org.opencontainers.image.base.name=alpine:latest
+```
+
+The action is configured to only specify the target image name. That's all that's needed in order to determine the base image name.
+
+```yaml
+- uses: mthalman/docker-bump-action@v0
+  with:
+    target-image-name: ghcr.io/mthalman/docker-bump-action-example:latest
+```
+
+See a working example of this workflow scenario in the [docker-bump-action-example](https://github.com/mthalman/docker-bump-action-example/blob/main/.github/workflows/monitor-base-annotation.yml) repo.
+
 ### Explicitly set base stage name
 
 In this example, the test stage is the last stage listed.
@@ -155,6 +188,8 @@ To configure the action to use `mcr.microsoft.com/dotnet/runtime:latest` as the 
 
 Indicating the base **stage** name rather than the base **image** name can be more convenient because it allows the image name in the Dockerfile to be updated without needing to also change the workflow file.
 
+See a working example of this workflow scenario in the [docker-bump-action-example](https://github.com/mthalman/docker-bump-action-example/blob/main/.github/workflows/monitor-dockerfile-base-stage-name.yml) repo.
+
 ### Explicitly set base image name
 
 In this example, the base image name used in the Dockerfile is dynamic so the action can't use the Dockerfile as input.
@@ -174,6 +209,8 @@ Here, the base image name is explicitly set to `alpine:latest`.
     target-image-name: ghcr.io/mthalman/docker-bump-action-example:latest
     base-image-name: alpine:latest
 ```
+
+See a working example of this workflow scenario in the [docker-bump-action-example](https://github.com/mthalman/docker-bump-action-example/blob/main/.github/workflows/monitor-base-image-name.yml) repo.
 
 ## Troubleshooting
 
