@@ -6,7 +6,7 @@ function LogMessage ([string] $Message) {
     Write-Output $Message | Out-File $env:HOME/log.txt -Append
 }
 
-function InvokeTool([string]$ToolCommand, [string] $ErrorMessage) {
+function InvokeTool([string]$ToolCommand) {
     LogMessage "Invoke: $ToolCommand"
     
     # Reset $LASTEXITCODE in case it was tripped somewhere
@@ -17,7 +17,7 @@ function InvokeTool([string]$ToolCommand, [string] $ErrorMessage) {
     $exitCode = $LASTEXITCODE
     LogMessage "Result: $result"
     if ($exitCode -ne 0) {
-        throw $ErrorMessage
+        throw "Command failed with exit code ${exitCode}: $ToolCommand"
     }
 
     return $result

@@ -18,14 +18,14 @@ Set-StrictMode -Version 2.0
 
 function GetDigest($imageName) {
     $digestCmd = "dredge manifest resolve $imageName --os linux --arch $Architecture"
-    $digest = $(InvokeTool $digestCmd "dredge manifest resolve failed")
+    $digest = $(InvokeTool $digestCmd)
     return $digest
 }
 
 Import-Module $PSScriptRoot/common.psm1
 
 $compareCmd = "dredge image compare layers --output json $BaseImage $TargetImage --os linux --arch $Architecture"
-$layerComparisonStr = $(InvokeTool $compareCmd "dredge image compare failed")
+$layerComparisonStr = $(InvokeTool $compareCmd)
 $layerComparison = $layerComparisonStr | ConvertFrom-Json
 
 $imageUpToDate = [bool]$($layerComparison.summary.targetIncludesAllBaseLayers)
