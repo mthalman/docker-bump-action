@@ -47,11 +47,7 @@ runs:
         $baseStage = "${{ inputs.base-stage-name }}"
         $arch = "${{ inputs.arch }}"
 
-        if (-not $baseImage -and -not $dockerfile) {
-          throw "'dockerfile' input not provided. This is required when 'base-image-name' is not provided." 
-        }
-
-        $dockerBumpCheckerVersion = "0.3.0"
+        $dockerBumpCheckerVersion = "0.4.0"
 
         $containerName = "docker-bump-checker"
         $containerSrcPath = "/src"
