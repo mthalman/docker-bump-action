@@ -108,7 +108,7 @@ runs:
         echo "ACTION_DISPATCH_PAYLOAD=$actionPayload" >> $env:GITHUB_OUTPUT
         echo "OUTPUT_DISPATCH_PAYLOAD=$outputPayload" >> $env:GITHUB_OUTPUT
     - name: Repository Dispatch
-      if: ${{ steps.check-image.outputs.SEND_DISPATCH }} == 'true'
+      if: ${{ steps.check-image.outputs.SEND_DISPATCH == 'true' }}
       uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ inputs.token }}
