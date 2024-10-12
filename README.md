@@ -1,3 +1,7 @@
+# THIS REPO IS NOT CURRENTLY BEING MAINTAINED
+
+Consider using [Renovate](https://github.com/renovatebot/renovate) as an alternative.
+
 # Docker Bump GitHub Action
 
 A [GitHub action](https://docs.github.com/actions) that can be used to trigger a GitHub Actions workflow or GitHub App webhook whenever a target Docker image is not up-to-date with its dependent base image. The canonical scenario is to trigger a GitHub Actions workflow to run that will rebuild a Docker image whenever its base image has been updated. But you're free to define whatever logic you want to have executed when this out-of-date condition occurs.
